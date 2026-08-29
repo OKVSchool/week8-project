@@ -11,11 +11,11 @@
 
 ---
 
-## 2. Live Skeleton URL [ ]
+## 2. Live Skeleton URL [x]
 *Loads clean from a fresh tab (and your phone)*
 
-- [ ] A real public address — the deployed URL, not the localhost tab that's been open since morning
-- [ ] Opens clean in a fresh tab; the phone-on-mobile-data check rules out a whole class of it-works-on-my-machine assumptions
+- [x] A real public address — https://week8-project-kp1v.vercel.app
+- [x] Opens clean in a fresh tab; the phone-on-mobile-data check rules out a whole class of it-works-on-my-machine assumptions
 - [ ] By the end of the week it doesn't just load — it takes a question and answers it
 
 **Done when:** The URL opens on your phone, off your dev network, and the app loads clean.
