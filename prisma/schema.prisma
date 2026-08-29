@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum WorkOrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  INVOICED
+}
+
+enum TravelDirection {
+  TO_CUSTOMER
+  FROM_CUSTOMER
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Customer {
+  id           Int         @id @default(autoincrement())
+  name         String
+  address      String
+  city         String
+  state        String
+  zip          String
+  phone        String?
+  email        String?
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+  workHours    String?                       // e.g. "Mon-Fri 7am-5pm"
+  equipment    Equipment[]
+  workOrders   WorkOrder[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Equipment {
+  id                Int         @id @default(autoincrement())
+  customerId        Int
+  customer          Customer    @relation(fields: [customerId], references: [id])
+  make              String
+  model             String
+  year              Int?
+  serialNumber      String?
+  unitNumber        String?
+  type              String?
+  smu               Float?                  // service meter units (baseline hours)
+  mastMake          String?
+  mastModel         String?
+  mastSerialNumber  String?
+  engineMake        String?
+  engineModel       String?
+  engineSize        String?
+  engineSerialNumber String?
+  driveTireSize     String?
+  steerTireSize     String?
+  workOrders        WorkOrder[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model WorkOrder {
+  id              Int             @id @default(autoincrement())
+  workOrderNumber String?         @unique
+  customerId      Int
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  equipmentId     Int
+  equipment       Equipment       @relation(fields: [equipmentId], references: [id])
+  status          WorkOrderStatus @default(PENDING)
+  dateReceived    DateTime        @default(now())
+  dateStarted     DateTime?
+  dateCompleted   DateTime?
+  unitHours       Float?
+  workRequested   String?
+  workPerformed   String?
+  workRemaining   String?
+  damagesNoted    String?
+  techNotes       String?
+  parts           Part[]
+  laborEntries    LaborEntry[]
+  travelEntries   TravelEntry[]
+  serviceReport   ServiceReport?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Part {
+  id          Int       @id @default(autoincrement())
+  workOrderId Int
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  partNumber  String?
+  description String
+  quantity    Float     @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model LaborEntry {
+  id          Int       @id @default(autoincrement())
+  workOrderId Int
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  description String?
+  hours       Float
+  rate        Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TravelEntry {
+  id               Int             @id @default(autoincrement())
+  workOrderId      Int
+  workOrder        WorkOrder       @relation(fields: [workOrderId], references: [id])
+  direction        TravelDirection
+  origin           String?
+  destination      String?
+  driveTimeMinutes Int?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model ServiceReport {
+  id                Int       @id @default(autoincrement())
+  workOrderId       Int       @unique
+  workOrder         WorkOrder @relation(fields: [workOrderId], references: [id])
+  serviceCallNumber String?
+  workOrderNumber   String?
+  ivrPin            String?
+  dateOpened        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
