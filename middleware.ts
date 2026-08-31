@@ -1,28 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export function middleware(request: NextRequest) {
   const start = Date.now()
-  const { pathname, method } = { pathname: request.nextUrl.pathname, method: request.method }
+  const method = request.method
+  const route = request.nextUrl.pathname
 
-  console.log(JSON.stringify({
-    level: 'info',
-    event: 'request.start',
-    method,
-    route: pathname,
-    ts: new Date().toISOString(),
-  }))
+  logger.info('request.start', { method, route })
 
   const response = NextResponse.next()
 
-  console.log(JSON.stringify({
-    level: 'info',
-    event: 'request.end',
-    method,
-    route: pathname,
-    status: response.status,
-    ms: Date.now() - start,
-    ts: new Date().toISOString(),
-  }))
+  logger.info('request.end', { method, route, status: response.status, ms: Date.now() - start })
 
   return response
 }
