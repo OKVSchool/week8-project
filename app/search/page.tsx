@@ -8,29 +8,10 @@ type Result = {
   text: string
 }
 
-// Module-level cache — model loads once per browser session
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let embedderPromise: Promise<any> | null = null
-
-function getEmbedder() {
-  if (!embedderPromise) {
-    embedderPromise = (async () => {
-      console.log('[embed] importing @xenova/transformers...')
-      // Dynamic import uses WASM backend in the browser — no native binaries
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mod = await import('@xenova/transformers') as any
-      console.log('[embed] import done, pipeline type:', typeof mod?.pipeline)
-      return mod.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true })
-    })()
-  }
-  return embedderPromise
-}
-
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('')
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState('')
 
@@ -40,31 +21,9 @@ export default function SearchPage() {
 
     setLoading(true)
     setError('')
-    setStatus('Loading model…')
 
     try {
-      let embed: (input: string[], opts: object) => Promise<{ data: Float32Array }>
-      try {
-        embed = await getEmbedder()
-      } catch (e) {
-        throw new Error('model load failed: ' + (e instanceof Error ? e.message : String(e)))
-      }
-
-      setStatus('Computing embedding…')
-      let embedding: number[]
-      try {
-        const output = await embed([query], { pooling: 'mean', normalize: true })
-        embedding = Array.from(output.data as Float32Array)
-      } catch (e) {
-        throw new Error('embed failed: ' + (e instanceof Error ? e.message : String(e)))
-      }
-
-      setStatus('Searching…')
-      const res = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, embedding }),
-      })
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
       const data = await res.json()
 
       if (!res.ok) {
@@ -76,11 +35,9 @@ export default function SearchPage() {
 
       setSearched(true)
     } catch (e) {
-      console.error('[search error]', e)
-      setError(e instanceof Error ? e.message : String(e))
+      setError(e instanceof Error ? e.message : 'Could not reach the search endpoint')
     } finally {
       setLoading(false)
-      setStatus('')
     }
   }
 
@@ -110,7 +67,7 @@ export default function SearchPage() {
           disabled={loading}
           style={{ padding: '0.5rem 1rem', fontSize: '1rem', cursor: 'pointer' }}
         >
-          {loading ? (status || 'Searching…') : 'Search'}
+          {loading ? 'Searching…' : 'Search'}
         </button>
       </form>
 

@@ -2,22 +2,36 @@ import { NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 import { Client } from 'pg'
 
-export async function POST(request: NextRequest) {
-  let body: { query?: string; embedding?: number[] }
-  try {
-    body = await request.json()
-  } catch {
-    return Response.json({ error: 'invalid JSON body' }, { status: 400 })
-  }
+async function embedQuery(query: string): Promise<number[]> {
+  const res = await fetch('https://api.cohere.com/v2/embed', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      texts: [query],
+      model: 'embed-english-light-v3.0',
+      input_type: 'search_query',
+      embedding_types: ['float'],
+    }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(`Cohere: ${data.message ?? JSON.stringify(data)}`)
+  return data.embeddings.float[0] as number[]
+}
 
-  const { query, embedding } = body
-  if (!query || !embedding || !Array.isArray(embedding)) {
-    return Response.json({ error: 'body must include query string and embedding array' }, { status: 400 })
+export async function GET(request: NextRequest) {
+  const query = request.nextUrl.searchParams.get('q')
+
+  if (!query) {
+    return Response.json({ error: 'q parameter is required' }, { status: 400 })
   }
 
   try {
     logger.info('search.start', { query })
 
+    const embedding = await embedQuery(query)
     const vec = '[' + embedding.join(',') + ']'
 
     const db = new Client({

@@ -97,21 +97,23 @@ function chunk(text, maxChars = CHUNK_SIZE, overlap = OVERLAP) {
 
 // ── MOVE 3: EMBED ──────────────────────────────────────────────────────────
 
-let _extractor = null
-async function getExtractor() {
-  if (_extractor) return _extractor
-  // Dynamic import required — @xenova/transformers is ESM-only
-  const { pipeline } = await import('@xenova/transformers')
-  console.log('Loading embedding model (downloads ~25 MB on first run)...')
-  _extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true })
-  console.log('Model ready.\n')
-  return _extractor
-}
-
 async function embedBatch(texts) {
-  const extractor = await getExtractor()
-  const output = await extractor(texts, { pooling: 'mean', normalize: true })
-  return output.tolist()
+  const res = await fetch('https://api.cohere.com/v2/embed', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      texts,
+      model: 'embed-english-light-v3.0',
+      input_type: 'search_document',
+      embedding_types: ['float'],
+    }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(`Cohere API error: ${data.message ?? JSON.stringify(data)}`)
+  return data.embeddings.float // number[][] — one 384-float array per text
 }
 
 // ── MOVE 4: LOAD ───────────────────────────────────────────────────────────
@@ -136,6 +138,10 @@ async function ensureSchema(db) {
 async function main() {
   if (!process.env.DATABASE_URL) {
     console.error('Missing DATABASE_URL in .env')
+    process.exit(1)
+  }
+  if (!process.env.COHERE_API_KEY) {
+    console.error('Missing COHERE_API_KEY in .env')
     process.exit(1)
   }
 
