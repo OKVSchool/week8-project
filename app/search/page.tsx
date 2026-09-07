@@ -63,8 +63,8 @@ export default function SearchPage() {
       }
 
       setSearched(true)
-    } catch {
-      setError('Could not reach the search endpoint')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
     } finally {
       setLoading(false)
       setStatus('')
