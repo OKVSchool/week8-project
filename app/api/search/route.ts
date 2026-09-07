@@ -3,9 +3,9 @@ import { logger } from '@/lib/logger'
 import { Client } from 'pg'
 
 async function embedQuery(query: string): Promise<number[]> {
-  // HuggingFace serverless inference via router (free, no native libs)
+  // HuggingFace classic serverless inference endpoint (free with fine-grained token)
   const res = await fetch(
-    'https://router.huggingface.co/hf-inference/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
+    'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
     {
       method: 'POST',
       headers: {
