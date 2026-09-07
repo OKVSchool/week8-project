@@ -1,19 +1,31 @@
 import { NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 import { Client } from 'pg'
-import { HfInference } from '@huggingface/inference'
-
-const hf = new HfInference(process.env.HF_TOKEN)
 
 async function embedQuery(query: string): Promise<number[]> {
-  const result = await hf.featureExtraction({
-    model: 'sentence-transformers/all-MiniLM-L6-v2',
-    inputs: query,
-  })
+  // Use the old HuggingFace Serverless Inference endpoint (free, no Inference Providers required)
+  const res = await fetch(
+    'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.HF_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ inputs: query, options: { wait_for_model: true } }),
+    }
+  )
 
-  // HF API returns [tokens, dims] for this model — mean-pool to get sentence vector
-  if (Array.isArray(result[0])) {
-    const matrix = result as number[][]
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`HF API ${res.status}: ${text}`)
+  }
+
+  const data = await res.json() as number[] | number[][]
+
+  // API returns [tokens, dims] — mean-pool to a single sentence vector
+  if (Array.isArray(data[0])) {
+    const matrix = data as number[][]
     const dims = matrix[0].length
     const pooled = new Array(dims).fill(0) as number[]
     for (const row of matrix) {
@@ -22,7 +34,7 @@ async function embedQuery(query: string): Promise<number[]> {
     return pooled.map(v => v / matrix.length)
   }
 
-  return result as number[]
+  return data as number[]
 }
 
 export async function GET(request: NextRequest) {
@@ -69,7 +81,6 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     logger.error('search.failed', { error: message })
-    // Return the real error message so we can debug without a log dashboard
     return Response.json({ error: message }, { status: 500 })
   }
 }
