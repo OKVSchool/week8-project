@@ -22,23 +22,23 @@
 
 ---
 
-## 3. Logs + Metrics Demonstrably Working [ ]
+## 3. Logs + Metrics Demonstrably Working [x]
 *You just watched a request appear*
 
-- [ ] Structured, leveled log lines covering the edges of every request and every error — with no password, token, or raw request body in any of them
-- [ ] Requests, errors, and latency readable from your host's dashboard or logs view
-- [ ] "Demonstrably" is the load-bearing word: trigger a request and watch it show up — don't check this one from memory
+- [x] Structured, leveled log lines covering the edges of every request and every error — with no password, token, or raw request body in any of them
+- [x] Requests, errors, and latency readable from your host's dashboard or logs view
+- [x] "Demonstrably" is the load-bearing word: trigger a request and watch it show up — don't check this one from memory
 
 **Done when:** You send one request right now and watch its log line appear in production.
 
 ---
 
-## 4. Break-and-Recover Evidence [ ]
+## 4. Break-and-Recover Evidence [x]
 *A deliberate break, caught and rolled back*
 
-- [ ] One controlled break, applied on purpose, with the symptom described in plain words
-- [ ] The smoking-gun log line that caught it — screenshot saved
-- [ ] The recovery closed all the way: the app back to working, with proof, not just "the error went away"
+- [x] One controlled break, applied on purpose, with the symptom described in plain words
+- [x] The smoking-gun log line that caught it — screenshot saved
+- [x] The recovery closed all the way: the app back to working, with proof, not just "the error went away"
 
 **Done when:** Your evidence shows all three beats — the break, the log line that caught it, and the app working again.
 
