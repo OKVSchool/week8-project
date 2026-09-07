@@ -1,23 +1,17 @@
 import { NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 import { Client } from 'pg'
+import { HfInference } from '@huggingface/inference'
 
-// Module-level singleton so the model survives warm Lambda reuse
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let extractor: any = null
+const hf = new HfInference(process.env.HF_TOKEN)
 
-async function getExtractor() {
-  if (extractor) return extractor
-  // Dynamic import required — @xenova/transformers is ESM-only
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mod = await import('@xenova/transformers') as any
-  mod.env.cacheDir = '/tmp/.cache/transformers'
-  extractor = await mod.pipeline(
-    'feature-extraction',
-    'Xenova/all-MiniLM-L6-v2',
-    { quantized: true }
-  )
-  return extractor
+async function embedQuery(query: string): Promise<number[]> {
+  const result = await hf.featureExtraction({
+    model: 'sentence-transformers/all-MiniLM-L6-v2',
+    inputs: query,
+  })
+  // API returns number[] for single string input
+  return result as number[]
 }
 
 export async function GET(request: NextRequest) {
@@ -30,9 +24,8 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('search.start', { query })
 
-    const embed = await getExtractor()
-    const output = await embed([query], { pooling: 'mean', normalize: true })
-    const vec = '[' + output.tolist()[0].join(',') + ']'
+    const embedding = await embedQuery(query)
+    const vec = '[' + embedding.join(',') + ']'
 
     const db = new Client({
       connectionString: process.env.DATABASE_URL,
