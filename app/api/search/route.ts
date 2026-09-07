@@ -10,7 +10,18 @@ async function embedQuery(query: string): Promise<number[]> {
     model: 'sentence-transformers/all-MiniLM-L6-v2',
     inputs: query,
   })
-  // API returns number[] for single string input
+
+  // HF API returns [tokens, dims] for this model — mean-pool to get sentence vector
+  if (Array.isArray(result[0])) {
+    const matrix = result as number[][]
+    const dims = matrix[0].length
+    const pooled = new Array(dims).fill(0) as number[]
+    for (const row of matrix) {
+      for (let i = 0; i < dims; i++) pooled[i] += row[i]
+    }
+    return pooled.map(v => v / matrix.length)
+  }
+
   return result as number[]
 }
 
@@ -56,7 +67,9 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (err) {
-    logger.error('search.failed', { error: err instanceof Error ? err.message : 'unknown' })
-    return Response.json({ error: 'search failed' }, { status: 500 })
+    const message = err instanceof Error ? err.message : String(err)
+    logger.error('search.failed', { error: message })
+    // Return the real error message so we can debug without a log dashboard
+    return Response.json({ error: message }, { status: 500 })
   }
 }
