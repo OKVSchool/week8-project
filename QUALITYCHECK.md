@@ -1,0 +1,1 @@
+All quality checks for the assignments will be posted here for to be double checked during the building of the web app

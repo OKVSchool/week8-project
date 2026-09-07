@@ -10,3 +10,13 @@ Choices listed in reversibility order — hardest to undo first, easiest last.
 | 4 | Backend Framework | Next.js (full-stack) | Next.js keeps front and backend speaking the same language. If Next.js changes, it will affect the whole app rather than just one segment. |
 | 5 | Frontend | React (via Next.js) | React has a similar issue to the Backend Framework. It keeps the frontend and backend the same language but will require an entire rebuild if it changes. |
 | 6 | Hosting | Vercel | Vercel only opens when a request is made so multiple requests at a time could cause them to fail whereas Render keeps it open at all times mitigating this issue. |
+
+---
+
+## Search UI Assembly Plan
+
+- [ ] Wire `app/api/search/route.ts` to the `chunks` table in Supabase → check: `fetch('/api/search?q=return+policy')` in the browser console returns results with scores.
+- [ ] Wire the API route to `scripts/search.js` output → check: top result and score from the route match the script for the same query.
+- [ ] Wire `app/search/page.tsx` to the API route → check: submitting "sick leave" stores the results array in React state with no network errors.
+- [ ] Wire the results list to the page state → check: three cards render in the browser showing source, score, and chunk text with no blank or `[object Object]` cards.
+- [ ] Wire the deployed app to Vercel → check: one live search on `week8-project-kp1v.vercel.app` returns the same top result as local dev.

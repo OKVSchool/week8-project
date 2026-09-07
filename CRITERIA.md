@@ -44,23 +44,23 @@
 
 ---
 
-## 5. Course Corpus Ingested [ ]
+## 5. Course Corpus Ingested [x]
 *Chunk count on screen, a number you can name*
 
-- [ ] All four Trailhead documents cleaned, chunked, embedded, and loaded — one pipeline, run start to finish
-- [ ] The count comes from the vector store itself, and it's sane for the corpus — not three chunks, not three thousand
-- [ ] You can state the chunk size and overlap that produced it, and one spot-check that made you trust the result
+- [x] All four Trailhead documents cleaned, chunked, embedded, and loaded — one pipeline, run start to finish
+- [x] The count comes from the vector store itself, and it's sane for the corpus — not three chunks, not three thousand
+- [x] You can state the chunk size and overlap that produced it, and one spot-check that made you trust the result
 
 **Done when:** You run a count against the store and the number on screen matches the one in your submission.
 
 ---
 
-## 6. Three Logged Semantic-Search Tests [ ]
+## 6. Three Logged Semantic-Search Tests [x]
 *Each judged, including the meaning-only win*
 
-- [ ] Three genuinely different queries, each logged with the top result's text and its score
-- [ ] Every query judged pass or fail, with the actual reason — not "looks good"
-- [ ] One query won on meaning alone, with the words that didn't overlap named explicitly — that's the evidence retrieval understands meaning, not keywords
+- [x] Three genuinely different queries, each logged with the top result's text and its score
+- [x] Every query judged pass or fail, with the actual reason — not "looks good"
+- [x] One query won on meaning alone, with the words that didn't overlap named explicitly — that's the evidence retrieval understands meaning, not keywords
 
 **Done when:** Your log names the non-overlapping words on the meaning-only win, and a logged fail (if you caught one) says why it missed.
 
