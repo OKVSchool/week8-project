@@ -3,22 +3,33 @@ import { logger } from '@/lib/logger'
 import { Client } from 'pg'
 
 async function embedQuery(query: string): Promise<number[]> {
-  const res = await fetch('https://api.cohere.com/v2/embed', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      texts: [query],
-      model: 'embed-english-light-v3.0',
-      input_type: 'search_query',
-      embedding_types: ['float'],
-    }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(`Cohere: ${data.message ?? JSON.stringify(data)}`)
-  return data.embeddings.float[0] as number[]
+  // HuggingFace serverless inference via router (free, no native libs)
+  const res = await fetch(
+    'https://router.huggingface.co/hf-inference/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.HF_TOKEN}`,
+        'Content-Type': 'application/json',
+        'X-Wait-For-Model': 'true',
+      },
+      body: JSON.stringify({ inputs: query }),
+    }
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`HF ${res.status}: ${text}`)
+  }
+  const data = await res.json() as number[] | number[][]
+  // API may return [tokens, dims] — mean-pool if so
+  if (Array.isArray(data[0])) {
+    const matrix = data as number[][]
+    const dims = matrix[0].length
+    const pooled = new Array(dims).fill(0) as number[]
+    for (const row of matrix) for (let i = 0; i < dims; i++) pooled[i] += row[i]
+    return pooled.map(v => v / matrix.length)
+  }
+  return data as number[]
 }
 
 export async function GET(request: NextRequest) {
