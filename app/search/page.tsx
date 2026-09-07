@@ -15,9 +15,11 @@ let embedderPromise: Promise<any> | null = null
 function getEmbedder() {
   if (!embedderPromise) {
     embedderPromise = (async () => {
+      console.log('[embed] importing @xenova/transformers...')
       // Dynamic import uses WASM backend in the browser — no native binaries
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mod = await import('@xenova/transformers') as any
+      console.log('[embed] import done, pipeline type:', typeof mod?.pipeline)
       return mod.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true })
     })()
   }
@@ -74,6 +76,7 @@ export default function SearchPage() {
 
       setSearched(true)
     } catch (e) {
+      console.error('[search error]', e)
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setLoading(false)
