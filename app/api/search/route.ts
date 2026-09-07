@@ -2,34 +2,23 @@ import { NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 import { Client } from 'pg'
 
-async function embedQuery(query: string): Promise<number[]> {
-  // HuggingFace classic serverless inference endpoint (free with fine-grained token)
-  const res = await fetch(
-    'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HF_TOKEN}`,
-        'Content-Type': 'application/json',
-        'X-Wait-For-Model': 'true',
-      },
-      body: JSON.stringify({ inputs: query }),
-    }
+// Singleton — survives warm Lambda reuse so the model only loads once
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let extractor: any = null
+
+async function getExtractor() {
+  if (extractor) return extractor
+  // onnxruntime-node is overridden to onnxruntime-web (WASM) in package.json,
+  // so this works in Vercel serverless without any native shared libraries.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mod = await import('@xenova/transformers') as any
+  mod.env.cacheDir = '/tmp/.cache/transformers'
+  extractor = await mod.pipeline(
+    'feature-extraction',
+    'Xenova/all-MiniLM-L6-v2',
+    { quantized: true }
   )
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`HF ${res.status}: ${text}`)
-  }
-  const data = await res.json() as number[] | number[][]
-  // API may return [tokens, dims] — mean-pool if so
-  if (Array.isArray(data[0])) {
-    const matrix = data as number[][]
-    const dims = matrix[0].length
-    const pooled = new Array(dims).fill(0) as number[]
-    for (const row of matrix) for (let i = 0; i < dims; i++) pooled[i] += row[i]
-    return pooled.map(v => v / matrix.length)
-  }
-  return data as number[]
+  return extractor
 }
 
 export async function GET(request: NextRequest) {
@@ -42,8 +31,9 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('search.start', { query })
 
-    const embedding = await embedQuery(query)
-    const vec = '[' + embedding.join(',') + ']'
+    const embed = await getExtractor()
+    const output = await embed([query], { pooling: 'mean', normalize: true })
+    const vec = '[' + output.tolist()[0].join(',') + ']'
 
     const db = new Client({
       connectionString: process.env.DATABASE_URL,
