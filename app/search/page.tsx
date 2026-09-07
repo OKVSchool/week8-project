@@ -41,11 +41,21 @@ export default function SearchPage() {
     setStatus('Loading model…')
 
     try {
-      const embed = await getEmbedder()
+      let embed: (input: string[], opts: object) => Promise<{ data: Float32Array }>
+      try {
+        embed = await getEmbedder()
+      } catch (e) {
+        throw new Error('model load failed: ' + (e instanceof Error ? e.message : String(e)))
+      }
 
       setStatus('Computing embedding…')
-      const output = await embed([query], { pooling: 'mean', normalize: true })
-      const embedding: number[] = output.tolist()[0]
+      let embedding: number[]
+      try {
+        const output = await embed([query], { pooling: 'mean', normalize: true })
+        embedding = Array.from(output.data as Float32Array)
+      } catch (e) {
+        throw new Error('embed failed: ' + (e instanceof Error ? e.message : String(e)))
+      }
 
       setStatus('Searching…')
       const res = await fetch('/api/search', {
