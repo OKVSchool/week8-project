@@ -2,52 +2,22 @@ import { NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 import { Client } from 'pg'
 
-async function embedQuery(query: string): Promise<number[]> {
-  // Use the old HuggingFace Serverless Inference endpoint (free, no Inference Providers required)
-  const res = await fetch(
-    'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HF_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ inputs: query, options: { wait_for_model: true } }),
-    }
-  )
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`HF API ${res.status}: ${text}`)
+export async function POST(request: NextRequest) {
+  let body: { query?: string; embedding?: number[] }
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: 'invalid JSON body' }, { status: 400 })
   }
 
-  const data = await res.json() as number[] | number[][]
-
-  // API returns [tokens, dims] — mean-pool to a single sentence vector
-  if (Array.isArray(data[0])) {
-    const matrix = data as number[][]
-    const dims = matrix[0].length
-    const pooled = new Array(dims).fill(0) as number[]
-    for (const row of matrix) {
-      for (let i = 0; i < dims; i++) pooled[i] += row[i]
-    }
-    return pooled.map(v => v / matrix.length)
-  }
-
-  return data as number[]
-}
-
-export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get('q')
-
-  if (!query) {
-    return Response.json({ error: 'q parameter is required' }, { status: 400 })
+  const { query, embedding } = body
+  if (!query || !embedding || !Array.isArray(embedding)) {
+    return Response.json({ error: 'body must include query string and embedding array' }, { status: 400 })
   }
 
   try {
     logger.info('search.start', { query })
 
-    const embedding = await embedQuery(query)
     const vec = '[' + embedding.join(',') + ']'
 
     const db = new Client({

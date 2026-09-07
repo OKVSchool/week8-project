@@ -8,10 +8,27 @@ type Result = {
   text: string
 }
 
+// Module-level cache — model loads once per browser session
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let embedderPromise: Promise<any> | null = null
+
+function getEmbedder() {
+  if (!embedderPromise) {
+    embedderPromise = (async () => {
+      // Dynamic import uses WASM backend in the browser — no native binaries
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mod = await import('@xenova/transformers') as any
+      return mod.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true })
+    })()
+  }
+  return embedderPromise
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState('')
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState('')
 
@@ -21,9 +38,21 @@ export default function SearchPage() {
 
     setLoading(true)
     setError('')
+    setStatus('Loading model…')
 
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+      const embed = await getEmbedder()
+
+      setStatus('Computing embedding…')
+      const output = await embed([query], { pooling: 'mean', normalize: true })
+      const embedding: number[] = output.tolist()[0]
+
+      setStatus('Searching…')
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, embedding }),
+      })
       const data = await res.json()
 
       if (!res.ok) {
@@ -38,6 +67,7 @@ export default function SearchPage() {
       setError('Could not reach the search endpoint')
     } finally {
       setLoading(false)
+      setStatus('')
     }
   }
 
@@ -67,7 +97,7 @@ export default function SearchPage() {
           disabled={loading}
           style={{ padding: '0.5rem 1rem', fontSize: '1rem', cursor: 'pointer' }}
         >
-          {loading ? 'Searching…' : 'Search'}
+          {loading ? (status || 'Searching…') : 'Search'}
         </button>
       </form>
 
