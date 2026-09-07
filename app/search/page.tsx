@@ -21,19 +21,24 @@ export default function SearchPage() {
     setError('')
     setResults([])
 
-    const res = await fetch('/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    })
-    const data = await res.json()
-    setLoading(false)
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      })
+      const data = await res.json().catch(() => ({ error: 'invalid response from server' }))
+      setLoading(false)
 
-    if (!res.ok) {
-      setError(data.error ?? 'Search failed')
-      return
+      if (!res.ok) {
+        setError(data.error ?? 'Search failed')
+        return
+      }
+      setResults(data.results)
+    } catch (e: unknown) {
+      setLoading(false)
+      setError(e instanceof Error ? e.message : 'Network error')
     }
-    setResults(data.results)
   }
 
   return (
