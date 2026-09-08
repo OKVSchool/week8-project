@@ -2,6 +2,17 @@ All quality checks for the assignments will be posted here for to be double chec
 
 ---
 
+## W8D5A - Mid-Capstone Checklist
+
+- [x] Decision document written, with a tradeoff per choice in your own words
+- [x] Live skeleton at a public URL — now answering questions, not just loading
+- [x] Logs and metrics demonstrably working — a search request shows up when you watch
+- [x] Break-and-recover evidence captured — a deliberate break, caught and rolled back
+- [x] Course corpus ingested, with a chunk count you can point to
+- [x] Three semantic-search tests logged, each with a pass/fail relevance note
+
+---
+
 ## W8D5A - Assemble the System
 
 - [x] Wire the search into the skeleton seam by seam, verifying each one before connecting the next
