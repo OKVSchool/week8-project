@@ -19,4 +19,4 @@ Choices listed in reversibility order — hardest to undo first, easiest last.
 - [x] Wire the API route to `scripts/search.js` output → check: top result and score from the route match the script for the same query.
 - [x] Wire `app/search/page.tsx` to the API route → check: submitting "sick leave" stores the results array in React state with no network errors.
 - [x] Wire the results list to the page state → check: three cards render in the browser showing source, score, and chunk text with no blank or `[object Object]` cards.
-- [ ] Wire the deployed app to Vercel → check: one live search on `week8-project-kp1v.vercel.app` returns the same top result as local dev.
+- [x] Wire the deployed app to Vercel → check: one live search on `week8-project-kp1v.vercel.app` returns the same top result as local dev.
