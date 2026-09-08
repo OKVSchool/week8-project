@@ -16,7 +16,7 @@
 
 - [x] A real public address — https://week8-project-kp1v.vercel.app
 - [x] Opens clean in a fresh tab; the phone-on-mobile-data check rules out a whole class of it-works-on-my-machine assumptions
-- [ ] By the end of the week it doesn't just load — it takes a question and answers it
+- [x] By the end of the week it doesn't just load — it takes a question and answers it
 
 **Done when:** The URL opens on your phone, off your dev network, and the app loads clean.
 
@@ -66,10 +66,16 @@
 
 ---
 
-## 7. The Five-Line C2 Baseline Note [ ]
+## 7. The Five-Line C2 Baseline Note [x]
 
-- [ ] Five lines: rough hours your Course 2 build cost, three specific friction points, and the one thing you refuse to repeat
-- [ ] Honest beats flattering — this is the "before" every later improvement gets measured against
-- [ ] Written in the final session, while the memory of the first build is still sharp
+- [x] Five lines: rough hours your Course 2 build cost, three specific friction points, and the one thing you refuse to repeat
+- [x] Honest beats flattering — this is the "before" every later improvement gets measured against
+- [x] Written in the final session, while the memory of the first build is still sharp
+
+The build ran 15–20 hours across the week.
+Auth was the first wall: API tokens for HuggingFace required paid Inference Provider access that a read-only token couldn't reach, and the error messages pointed the wrong direction every time.
+Connecting the database from Vercel took three separate fixes — missing environment variable, wrong Supabase hostname, wrong password — each one looking identical to the last until isolated.
+Semantic search on Vercel's free tier has a hard 10-second limit that no amount of code changes can fix; the constraint only became clear after several failed attempts.
+I will not build the embedding layer on a third-party service again — the signup walls, auth restrictions, and network blocks cost more time than hosting the model myself.
 
 **Done when:** The five lines exist, they're specific, and you'd stand behind them as a fair picture of the first build.
